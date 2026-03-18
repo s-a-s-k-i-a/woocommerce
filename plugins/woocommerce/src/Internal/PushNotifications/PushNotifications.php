@@ -7,6 +7,7 @@ namespace Automattic\WooCommerce\Internal\PushNotifications;
 defined( 'ABSPATH' ) || exit;
 
 use Automattic\Jetpack\Connection\Manager as JetpackConnectionManager;
+use Automattic\WooCommerce\Internal\PushNotifications\Controllers\PushNotificationRestController;
 use Automattic\WooCommerce\Internal\PushNotifications\Controllers\PushTokenRestController;
 use Automattic\WooCommerce\Internal\PushNotifications\Entities\PushToken;
 use Automattic\WooCommerce\Internal\PushNotifications\Notifications\NewOrderNotification;
@@ -32,6 +33,11 @@ class PushNotifications {
 	 * Feature name for the push notifications feature.
 	 */
 	const FEATURE_NAME = 'push_notifications';
+
+	/**
+	 * ActionScheduler group for all push notification jobs.
+	 */
+	const ACTION_SCHEDULER_GROUP = 'wc-push-notifications';
 
 	/**
 	 * Roles that can receive push notifications.
@@ -89,6 +95,7 @@ class PushNotifications {
 		wc_get_container()->get( PendingNotificationStore::class )->register();
 
 		( new PushTokenRestController() )->register();
+		( new PushNotificationRestController() )->register();
 		( new NewOrderNotificationTrigger() )->register();
 		( new NewReviewNotificationTrigger() )->register();
 
