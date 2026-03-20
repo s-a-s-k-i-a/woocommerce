@@ -1877,9 +1877,6 @@ class WC_Order extends WC_Abstract_Order {
 
 			$line_items = $this->get_items( 'line_item' );
 			if ( count( $line_items ) > 0 ) {
-				$product_ids = array_unique( array_filter( array_map( static fn( $item ) => $item->get_variation_id() ? $item->get_variation_id() : $item->get_product_id(), $line_items ) ) );
-				_prime_post_caches( $product_ids );
-
 				foreach ( $line_items as $item ) {
 					$product = $item->get_product();
 					if ( $product ) {
