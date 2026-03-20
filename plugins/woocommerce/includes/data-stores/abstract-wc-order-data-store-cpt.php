@@ -670,7 +670,7 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	 * @param array<int,array<int, object>> $raw_meta_data_collection Meta-entries grouped by line item id.
 	 * @return void
 	 */
-	private function prime_product_post_caches_for_order_items(array $line_items_all, array $raw_meta_data_collection ): void {
+	private function prime_product_post_caches_for_order_items( array $line_items_all, array $raw_meta_data_collection ): void {
 		$product_ids = array();
 		foreach ( $line_items_all as $line_item ) {
 			if ( 'line_item' === $line_item->order_item_type ) {
