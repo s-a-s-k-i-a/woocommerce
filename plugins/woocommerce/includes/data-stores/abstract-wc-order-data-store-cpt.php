@@ -674,7 +674,7 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		$product_ids = array();
 		foreach ( $line_items_all as $line_item ) {
 			if ( 'line_item' === $line_item->order_item_type ) {
-				foreach ( $raw_meta_data_collection[ $line_item->order_item_id ] as $meta ) {
+				foreach ( $raw_meta_data_collection[ $line_item->order_item_id ] ?? array() as $meta ) {
 					if ( ( '_variation_id' === $meta->meta_key || '_product_id' === $meta->meta_key ) && $meta->meta_value > 0 ) {
 						$product_ids[] = (int) $meta->meta_value;
 					}
