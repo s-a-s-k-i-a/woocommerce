@@ -306,7 +306,7 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order {
 		}
 
 		if ( $items_changed ) {
-			wp_cache_delete( 'wc_order_' . $this->get_id() . '_needs_processing', 'orders' );
+			wp_cache_delete( 'order-needs-processing-' . $this->get_id() );
 
 			// Invalidate the order cache to prevent stale item data.
 			// This fixes a race condition where get_items() may have been called
@@ -1660,7 +1660,7 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order {
 		$item->save();
 		$this->add_item( $item );
 		wc_do_deprecated_action( 'woocommerce_order_add_product', array( $this->get_id(), $item->get_id(), $product, $qty, $args ), '3.0', 'woocommerce_new_order_item action instead' );
-		wp_cache_delete( 'wc_order_' . $this->get_id() . '_needs_processing', 'orders' );
+		wp_cache_delete( 'order-needs-processing-' . $this->get_id() );
 		return $item->get_id();
 	}
 
