@@ -1878,31 +1878,15 @@ class WC_Order extends WC_Abstract_Order {
 			$line_items = $this->get_items( 'line_item' );
 			if ( count( $line_items ) > 0 ) {
 				$product_ids = array_unique( array_filter( array_map( static fn( $item ) => $item->get_variation_id() ? $item->get_variation_id() : $item->get_product_id(), $line_items ) ) );
+				_prime_post_caches( $product_ids );
 
-				$has_search_products_override   = has_filter( 'woocommerce_product_pre_search_products' );
-				$has_needs_processing_override  = has_filter( 'woocommerce_order_item_needs_processing' );
-				$has_line_item_product_override = has_filter( 'woocommerce_get_product_from_item' ) || has_filter( 'woocommerce_order_item_product' );
-				$lightweight_route_feasible     = ! $has_search_products_override && ! $has_needs_processing_override && ! $has_line_item_product_override  && ! get_option( 'woocommerce_product_lookup_table_is_generating' );
-
-				if ( $lightweight_route_feasible ) {
-					// This lightweight approach requires uses product meta lookup tables. Since product IDs are known
-					// in advance, the join relies on primary keys, ensuring strong performance.
-					/** @var WC_Product_Data_Store_CPT $data_store */
-					$data_store             = WC_Data_Store::load( 'product' );
-					$ids_need_no_processing = $data_store->search_products( '', 'downloadable, virtual', true, true, null, $product_ids );
-
-					$needs_processing = count( $product_ids ) !== count( $ids_need_no_processing );
-				} else {
-					// The original route is computationally intensive because it requires constructing product and order objects.
-					_prime_post_caches( $product_ids );
-					foreach ( $line_items as $item ) {
-						$product = $item->get_product();
-						if ( $product ) {
-							$virtual_downloadable_item = $product->is_downloadable() && $product->is_virtual();
-							if ( apply_filters( 'woocommerce_order_item_needs_processing', ! $virtual_downloadable_item, $product, $order_id ) ) {
-								$needs_processing = 1;
-								break;
-							}
+				foreach ( $line_items as $item ) {
+					$product = $item->get_product();
+					if ( $product ) {
+						$virtual_downloadable_item = $product->is_downloadable() && $product->is_virtual();
+						if ( apply_filters( 'woocommerce_order_item_needs_processing', ! $virtual_downloadable_item, $product, $order_id ) ) {
+							$needs_processing = 1;
+							break;
 						}
 					}
 				}

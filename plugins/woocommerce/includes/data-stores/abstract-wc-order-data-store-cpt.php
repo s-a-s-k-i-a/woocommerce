@@ -729,29 +729,6 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	}
 
 	/**
-	 * Prime the needs_processing transient cache for a batch of orders.
-	 *
-	 * WC_Order::needs_processing() calls get_transient() per order, which
-	 * triggers an individual wp_options query each time. By priming the
-	 * object cache for all transient option names in a single query, we
-	 * eliminate the N+1.
-	 *
-	 * @param array $order_ids  Order IDs to prime cache for.
-	 * @param array $query_vars Query vars for the query.
-	 * @return void
-	 * @since 10.7.0
-	 */
-	protected function prime_needs_processing_transients( $order_ids, $query_vars ) {
-		$option_names = array();
-		foreach ( $order_ids as $order_id ) {
-			$option_names[] = '_transient_wc_order_' . $order_id . '_needs_processing';
-			$option_names[] = '_transient_timeout_wc_order_' . $order_id . '_needs_processing';
-		}
-
-		wp_prime_option_caches( $option_names );
-	}
-
-	/**
 	 * Remove all line items (products, coupons, shipping, taxes) from the order.
 	 *
 	 * @param WC_Order $order Order object.
