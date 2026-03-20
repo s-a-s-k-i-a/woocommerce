@@ -1869,27 +1869,43 @@ class WC_Order extends WC_Abstract_Order {
 	 * @return bool
 	 */
 	public function needs_processing() {
-		$transient_name   = 'wc_order_' . $this->get_id() . '_needs_processing';
-		$needs_processing = get_transient( $transient_name );
+		$can_override_needs_processing = has_filter( 'woocommerce_order_item_needs_processing' );
+		$can_override_product          = has_filter( 'woocommerce_get_product_from_item' ) || has_filter( 'woocommerce_order_item_product' );
+		$lightweight_route_feasible    = ! $can_override_needs_processing && ! $can_override_product  && ! get_option( 'woocommerce_product_lookup_table_is_generating' );
+		// TBD: benchmark whether lightweight mode allows us to use wp_cache_* APIs instead of transients.
+		$beware_of_options_table_bloat = ! wp_using_ext_object_cache();
+
+		$order_id         = $this->get_id();
+		$transient_name   = 'wc_order_' . $order_id . '_needs_processing';
+		// TBD: cleanup.
+		$needs_processing = false; //get_transient(  . $transient_name );
 
 		if ( false === $needs_processing ) {
 			$needs_processing = 0;
 
-			$line_items = $this->get_items();
+			$line_items = $this->get_items( 'line_item' );
 			if ( count( $line_items ) > 0 ) {
-				foreach ( $line_items as $item ) {
-					if ( $item->is_type( 'line_item' ) ) {
+				$product_ids = array_unique( array_filter( array_map( static fn($item ) => $item->get_variation_id() ? $item->get_variation_id() : $item->get_product_id(), $line_items ) ) );
+
+				if ( $lightweight_route_feasible ) {
+					// This lightweight approach requires no customizations and uses product meta lookup tables. Since
+					// product IDs are known in advance, the join relies on primary keys, ensuring strong performance.
+					/** @var WC_Product_Data_Store_CPT $data_store */
+					$data_store       = WC_Data_Store::load( 'product' );
+					$ids_to_exclude   = $data_store->search_products( '', 'downloadable, virtual', true, true, null, $product_ids );
+
+					$needs_processing = count( $product_ids ) !== count( $ids_to_exclude );
+				} else {
+					// The original route is computationally intensive because it requires constructing product and order objects.
+					_prime_post_caches( $product_ids );
+					foreach ( $line_items as $item ) {
 						$product = $item->get_product();
-
-						if ( ! $product ) {
-							continue;
-						}
-
-						$virtual_downloadable_item = $product->is_downloadable() && $product->is_virtual();
-
-						if ( apply_filters( 'woocommerce_order_item_needs_processing', ! $virtual_downloadable_item, $product, $this->get_id() ) ) {
-							$needs_processing = 1;
-							break;
+						if ( $product ) {
+							$virtual_downloadable_item = $product->is_downloadable() && $product->is_virtual();
+							if ( apply_filters( 'woocommerce_order_item_needs_processing', ! $virtual_downloadable_item, $product, $order_id ) ) {
+								$needs_processing = 1;
+								break;
+							}
 						}
 					}
 				}

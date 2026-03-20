@@ -1975,7 +1975,7 @@ class WC_Product_Data_Store_CPT extends WC_Data_Store_WP implements WC_Object_Da
 		$limit_query  = '';
 
 		// When searching variations we should include the parent's meta table for use in searches.
-		if ( $include_variations ) {
+		if ( $include_variations && '' !== $term ) {
 			$join_query = " LEFT JOIN {$wpdb->wc_product_meta_lookup} parent_wc_product_meta_lookup
 			 ON posts.post_type = 'product_variation' AND parent_wc_product_meta_lookup.product_id = posts.post_parent ";
 		}
@@ -1995,7 +1995,7 @@ class WC_Product_Data_Store_CPT extends WC_Data_Store_WP implements WC_Object_Da
 		if ( stristr( $term, ' or ' ) ) {
 			$term_groups = preg_split( '/\s+or\s+/i', $term );
 		} else {
-			$term_groups = array( $term );
+			$term_groups = $term === '' ? array() : array( $term );
 		}
 
 		$search_where   = '';
@@ -2052,10 +2052,12 @@ class WC_Product_Data_Store_CPT extends WC_Data_Store_WP implements WC_Object_Da
 			$search_where .= ' AND posts.ID NOT IN(' . implode( ',', array_map( 'absint', $exclude ) ) . ') ';
 		}
 
-		if ( 'virtual' === $type ) {
-			$type_where = ' AND ( wc_product_meta_lookup.virtual = 1 ) ';
-		} elseif ( 'downloadable' === $type ) {
-			$type_where = ' AND ( wc_product_meta_lookup.downloadable = 1 ) ';
+		foreach ( wp_parse_list( (string) $type ) as $product_type ) {
+			if ( 'virtual' === $product_type ) {
+				$type_where .= ' AND ( wc_product_meta_lookup.virtual = 1 ) ';
+			} elseif ( 'downloadable' === $product_type ) {
+				$type_where .= ' AND ( wc_product_meta_lookup.downloadable = 1 ) ';
+			}
 		}
 
 		if ( ! $all_statuses ) {
