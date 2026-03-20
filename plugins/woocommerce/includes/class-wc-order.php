@@ -1875,15 +1875,17 @@ class WC_Order extends WC_Abstract_Order {
 		if ( false === $needs_processing ) {
 			$needs_processing = 0;
 
-			$line_items = $this->get_items( 'line_item' );
+			$line_items = $this->get_items();
 			if ( count( $line_items ) > 0 ) {
 				foreach ( $line_items as $item ) {
-					$product = $item->get_product();
-					if ( $product ) {
-						$virtual_downloadable_item = $product->is_downloadable() && $product->is_virtual();
-						if ( apply_filters( 'woocommerce_order_item_needs_processing', ! $virtual_downloadable_item, $product, $order_id ) ) {
-							$needs_processing = 1;
-							break;
+					if ( $item->is_type( 'line_item' ) ) {
+						$product = $item->get_product();
+						if ( $product ) {
+							$virtual_downloadable_item = $product->is_downloadable() && $product->is_virtual();
+							if ( apply_filters( 'woocommerce_order_item_needs_processing', ! $virtual_downloadable_item, $product, $order_id ) ) {
+								$needs_processing = 1;
+								break;
+							}
 						}
 					}
 				}

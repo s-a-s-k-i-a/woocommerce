@@ -947,7 +947,17 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order {
 
 			if ( $group ) {
 				if ( ! isset( $this->items[ $group ] ) ) {
-					$this->items[ $group ] = array_filter( $this->data_store->read_items( $this, $type ) );
+					$read_items = array_filter( $this->data_store->read_items( $this, $type ) );
+
+					// Prime the product cache to ensure that methods such as needs_processing, get_downloadable_items, and has_downloadable_item run
+					// on warm post meta caches for products. This addresses scenarios where the order object was not populated during a batch population.
+					if ( 'line_item' === $type && ! empty( $read_items ) ) {
+						$product_ids = array_map( static fn( $item ) => $item->get_variation_id() ? $item->get_variation_id() : $item->get_product_id(), $read_items );
+						$product_ids = array_unique( array_filter( $product_ids ) );
+						_prime_post_caches( $product_ids );
+					}
+
+					$this->items[ $group ] = $read_items;
 				}
 				// Don't use array_merge here because keys are numeric.
 				$items = $items + $this->items[ $group ];
